@@ -4,6 +4,8 @@
 #include <memory>
 #include <functional>
 #include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/asio/spawn.hpp>
 #include "buffer.hpp"
 #include "log.hpp"
 
@@ -63,12 +65,10 @@ namespace snow
                                 pkg_len = m_pkg_spliter(m_recv_buffer.read_index(), m_recv_buffer.readable_bytes());
                                 SNOW_LOG_TRACE << "pkg_len : " << pkg_len << std::endl;
                                 if(pkg_len > 0) {
-                                    std::string request_data(m_recv_buffer.read_index(), pkg_len);
-                                    m_recv_buffer.increase_read_index(pkg_len);
-                                    std::unique_ptr<request> new_request(new request(request_data));
                                     if(m_request_dispatcher) {
-                                        m_request_dispatcher(std::move(new_request), std::bind(&connection::send, self, std::placeholders::_1));
+                                        m_request_dispatcher(m_recv_buffer.read_index(), pkg_len, std::bind(&connection::send, self, std::placeholders::_1));
                                     }
+                                    m_recv_buffer.increase_read_index(pkg_len);
                                 } else if(pkg_len < 0) {
                                     SNOW_LOG_TRACE << "socket read error" << std::endl;
                                     m_socket.close();
@@ -107,7 +107,7 @@ namespace snow
                         response.increase_read_index(n);
                     }
                     SNOW_LOG_TRACE << "socket[" << m_socket.native() << "] " << "write " << n << " bytes" << std::endl;
-                    SNOW_LOG_TRACE << "response len[" << response->get_data().size() << "]" << "data[" << response->get_data() << "]" << std::endl;
+                    SNOW_LOG_TRACE << "response len[" << response.readable_bytes() << "]" << "data[" << response.read_index() << "]" << std::endl;
                 }
             });
             return 0;

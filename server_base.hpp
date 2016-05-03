@@ -56,14 +56,10 @@ namespace snow
         }
 
         void request_dispatch(const char* req_data, std::size_t req_len, response_dispatch_type rsp_dispatcher) {
-            SNOW_LOG_TRACE <<  "new request : " << req->get_data() << std::endl;
-            /*boost::asio::spawn(m_ios,
-                               [&](boost::asio::yield_context yield){
-                                   auto new_session = std::make_shared<session_type>();
-                                   std::unique_ptr<response> rsp(new response);
-                                   new_session->process(req, &rsp, yield);
-                                   rsp_dispatcher(std::move(rsp));
-                               });*/
+            SNOW_LOG_TRACE <<  "new request : " << req_data << std::endl;
+            auto new_session = std::make_shared<session_type>(m_ios);
+            new_session->set_response_dispatcher(std::move(rsp_dispatcher));
+            new_session->start(req_data, req_len);
         }
 
     protected:

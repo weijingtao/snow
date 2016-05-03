@@ -13,66 +13,58 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
+#include "buffer.hpp"
 #include "request.hpp"
 #include "response.hpp"
 
 namespace snow
 {
-    class session : public std::enable_shared_from_this<session>
+    template <typename RequestType, typename ResponseType>
+    class session : public std::enable_shared_from_this<session<RequestType, ResponseType>>
     {
     public:
+        typedef RequestType                             request_type;
+        typedef ResponseType                            response_type;
+        typedef std::function<void(const buffer&)>      response_dispatch_type;
+
         explicit session(boost::asio::io_service& ios)
                 : m_strand(ios),
                   m_timer(ios) {
 
         }
 
-        virtual void process(const request& req, response* rsp, boost::asio::yield_context yield) = 0;
-
-        virtual response do_request(const request& req, boost::asio::yield_context& yield){
-            auto self(shared_from_this());
-            uint32_t dest_ip = inet_addr(req.get_ip().c_str());
-            dest_ip = ntohl(dest_ip);
-            boost::asio::ip::address_v4 addr(dest_ip);
-            boost::asio::ip::tcp::endpoint dest_addr(addr, req.get_port());
-            auto socket = std::make_shared<boost::asio::ip::tcp::socket>(m_strand.get_io_service());
-            socket->connect(dest_addr);
-            response rsp(req);
-
-            boost::asio::spawn(m_strand, [this, self, &socket, &req, &rsp](boost::asio::yield_context yield) {
-                try {
-                    m_timer.expires_from_now(std::chrono::seconds(std::min(req.get_time_out(), m_time_left)));
-                    boost::asio::async_write(*socket, boost::asio::buffer("hello"), yield);
-                    std::cout << "send success" << std::endl;
-
-//                    socket->async_read_some(boost::asio::buffer(rsp.get_data().data(), rsp.get_data().size()), yield);
-                    std::cout << "recv success" << std::endl;
-                    std::cout << rsp.get_data().data() << std::endl;
-                } catch (std::exception& e) {
-                    socket->close();
-                    m_timer.cancel();
-                }
-            });
-
-            boost::asio::spawn(m_strand, [this, self, &socket, &rsp](boost::asio::yield_context yield) {
-                while (socket->is_open()) {
-                    boost::system::error_code ignored_ec;
-                    m_timer.async_wait(yield[ignored_ec]);
-                    if (m_timer.expires_from_now() <= std::chrono::seconds(0)) {
-                        socket->close();
-                        rsp.set_result(-1);
-                    }
-                }
-            });
-
-            return std::move(rsp);
+        void start(const char* req_data, std::size_t req_len) {
+            if(m_request.parse_from_array(req_data, req_len)) {
+                auto self(shared_from_this());
+                boost::asio::spawn(m_strand,
+                               [this, self](boost::asio::yield_context yield){
+                                   if(0 == process(m_request, &m_response, yield)) {
+                                       buffer rsp_buffer;
+                                       if(m_response.serialize_to_buffer(&rsp_buffer)) {
+                                           m_rsp_dispatcher(rsp_buffer);
+                                       }
+                                   }
+                               });
+            }
         }
+
+        void set_response_dispatcher(response_dispatch_type rsp_dispatcher) {
+            m_rsp_dispatcher = std::move(rsp_dispatcher);
+        }
+
+        virtual int process(const request_type& req, response_type* rsp, boost::asio::yield_context yield) = 0;
 
 
     protected:
         boost::asio::io_service::strand               m_strand;
         boost::asio::steady_timer                     m_timer;
+
         int       m_time_left;
+
+    private:
+        request_type           m_request;
+        response_type          m_response;
+        response_dispatch_type m_rsp_dispatcher;
     };
 }
 

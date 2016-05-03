@@ -5,5 +5,6 @@
 #include "server_base.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "session.hpp"
 
 #endif //_SNOW_HPP
