@@ -18,6 +18,17 @@ namespace snow
 
         }
 
+        //TODO
+        buffer(buffer&& rhs) {
+            m_buffer.swap(rhs.m_buffer);
+            m_size        = rhs.m_size;
+            m_read_index  = rhs.m_read_index;
+            m_write_index = rhs.m_write_index;
+            rhs.m_size        = 0;
+            rhs.m_read_index  = 0;
+            rhs.m_write_index = 0;
+        }
+
         std::size_t readable_bytes() const {
             return m_write_index - m_read_index;
         }
