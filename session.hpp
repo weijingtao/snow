@@ -35,7 +35,7 @@ namespace snow
 
         void start(const char* req_data, std::size_t req_len) {
             if(m_request.parse_from_array(req_data, req_len)) {
-                auto self(shared_from_this());
+                auto self(this->shared_from_this());
                 boost::asio::spawn(m_strand,
                                [this, self](boost::asio::yield_context yield){
                                    if(0 == process(m_request, &m_response, yield)) {
