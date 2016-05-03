@@ -2,9 +2,7 @@
 #define _SNOW_CONNECTION_HPP
 
 #include <memory>
-#include <array>
 #include <functional>
-#include <string>
 #include <boost/asio.hpp>
 #include "buffer.hpp"
 #include "log.hpp"
