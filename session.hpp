@@ -19,17 +19,50 @@
 
 namespace snow
 {
+    class session_base : public std::enable_shared_from_this<session_base>
+    {
+    public:
+        typedef std::function<void(const buffer&)>      response_dispatch_type;
+
+        session_base(boost::asio::io_service& ios)
+             : m_strand(ios),
+               m_timer(ios),
+               m_time_left(0) {
+
+        }
+
+        virtual ~session_base() {
+
+        }
+
+        void set_response_dispatcher(response_dispatch_type rsp_dispatcher) {
+            m_rsp_dispatcher = std::move(rsp_dispatcher);
+        }
+
+        boost::asio::io_service::strand& get_strand() {
+            return m_strand;
+        }
+
+        std::size_t get_time_left() const {
+            return m_time_left;
+        }
+
+    protected:
+        boost::asio::io_service::strand  m_strand;
+        boost::asio::steady_timer        m_timer;
+        response_dispatch_type           m_rsp_dispatcher;
+        std::size_t                      m_time_left;
+    };
     template <typename RequestType, typename ResponseType>
-    class session : public std::enable_shared_from_this<session<RequestType, ResponseType>>
+    class session : public session_base
     {
     public:
         typedef RequestType                             request_type;
         typedef ResponseType                            response_type;
-        typedef std::function<void(const buffer&)>      response_dispatch_type;
+
 
         explicit session(boost::asio::io_service& ios)
-                : m_strand(ios),
-                  m_timer(ios) {
+                : session_base(ios) {
 
         }
 
@@ -48,23 +81,12 @@ namespace snow
             }
         }
 
-        void set_response_dispatcher(response_dispatch_type rsp_dispatcher) {
-            m_rsp_dispatcher = std::move(rsp_dispatcher);
-        }
-
         virtual int process(const request_type& req, response_type* rsp, boost::asio::yield_context yield) = 0;
 
-
-    protected:
-        boost::asio::io_service::strand               m_strand;
-        boost::asio::steady_timer                     m_timer;
-
-        int       m_time_left;
 
     private:
         request_type           m_request;
         response_type          m_response;
-        response_dispatch_type m_rsp_dispatcher;
     };
 }
 
