@@ -100,6 +100,7 @@ namespace snow
             auto self(shared_from_this());
             boost::asio::spawn(m_send_strand, [this, self, &rsp](boost::asio::yield_context yield) {
                 auto response(std::move(const_cast<buffer&>(rsp)));
+                SNOW_LOG_TRACE << "response len[" << response.readable_bytes() << "]" << "data[" << std::string(response.read_index(), response.readable_bytes()) << "]" << std::endl;
                 while (m_socket.is_open() && response.readable_bytes() > 0) {
                     boost::system::error_code ignored_ec;
                     std::size_t n = m_socket.async_write_some(boost::asio::buffer(response.read_index(), response.readable_bytes()), yield);
@@ -107,7 +108,6 @@ namespace snow
                         response.increase_read_index(n);
                     }
                     SNOW_LOG_TRACE << "socket[" << m_socket.native() << "] " << "write " << n << " bytes" << std::endl;
-                    SNOW_LOG_TRACE << "response len[" << response.readable_bytes() << "]" << "data[" << response.read_index() << "]" << std::endl;
                 }
             });
             return 0;

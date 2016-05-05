@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <memory>
+#include "log.hpp"
 
 namespace snow
 {
@@ -15,18 +16,23 @@ namespace snow
                m_size(init_size),
                m_read_index(0),
                m_write_index(0) {
-
+            SNOW_LOG_TRACE << "buffer construct" << std::endl;
         }
 
         //TODO
-        buffer(buffer&& rhs) {
+        buffer(buffer&& rhs)
+            : m_size(rhs.m_size),
+              m_read_index(rhs.m_read_index),
+              m_write_index(rhs.m_write_index) {
             m_buffer.swap(rhs.m_buffer);
-            m_size        = rhs.m_size;
-            m_read_index  = rhs.m_read_index;
-            m_write_index = rhs.m_write_index;
             rhs.m_size        = 0;
             rhs.m_read_index  = 0;
             rhs.m_write_index = 0;
+            SNOW_LOG_TRACE << "buffer move construct" << std::endl;
+        }
+
+        ~buffer() {
+            SNOW_LOG_TRACE << "buffer destruct" << std::endl;
         }
 
         std::size_t readable_bytes() const {
