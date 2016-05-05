@@ -6,6 +6,8 @@
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/spawn.hpp>
+#include "request_base.hpp"
+#include "response_base.hpp"
 
 namespace snow
 {
@@ -17,6 +19,7 @@ namespace snow
         session_base(boost::asio::io_service& ios)
             : m_strand(ios),
               m_timer(ios),
+              m_yield__context_ptr(nullptr),
               m_time_left(0) {
 
         }
@@ -37,9 +40,20 @@ namespace snow
             return m_time_left;
         }
 
+        boost::asio::yield_context& get_yield_context() {
+            return *m_yield__context_ptr;
+        }
+
+
+    protected:
+        int set_yield_context_ptr(boost::asio::yield_context* yield_context_ptr) {
+            m_yield__context_ptr = yield_context_ptr;
+        }
+
     protected:
         boost::asio::io_service::strand  m_strand;
         boost::asio::steady_timer        m_timer;
+        boost::asio::yield_context*      m_yield__context_ptr;
         response_dispatch_type           m_rsp_dispatcher;
         std::size_t                      m_time_left;
     };

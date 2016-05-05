@@ -1,11 +1,28 @@
 #ifndef _SNOW_CLIENT_HPP
 #define _SNOW_CLIENT_HPP
 
+#include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/asio/spawn.hpp>
+#include "session_base.hpp"
+
 namespace snow
 {
+    template <typename RequestType, typename ResponseType, typename PkgCheckType>
     class client
     {
-        virtual response do_request(const request& req, boost::asio::yield_context& yield){
+    public:
+        typedef RequestType  request_type;
+        typedef ResponseType response_type;
+        typedef PkgCheckType pkg_check_type;
+
+        explicit client(session_base& session)
+             : m_session(session),
+               m_timer(m_session.get_strand().get_io_service()) {
+
+        }
+
+        response_type do_request(const request_type& req, boost::asio::yield_context& yield){
             auto self(shared_from_this());
             uint32_t dest_ip = inet_addr(req.get_ip().c_str());
             dest_ip = ntohl(dest_ip);
@@ -43,6 +60,10 @@ namespace snow
 
             return std::move(rsp);
         }
+
+    private:
+        session_base&              m_session;
+        boost::asio::steady_timer  m_timer;
     };
 }
 

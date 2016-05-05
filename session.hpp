@@ -29,7 +29,8 @@ namespace snow
                 auto self(this->shared_from_this());
                 boost::asio::spawn(m_strand,
                                [this, self](boost::asio::yield_context yield){
-                                   if(0 == process(m_request, &m_response, yield)) {
+                                   set_yield_context_ptr(&yield);
+                                   if(0 == process(m_request, &m_response)) {
                                        buffer rsp_buffer;
                                        if(m_response.serialize_to_buffer(&rsp_buffer)) {
                                            m_rsp_dispatcher(rsp_buffer);
@@ -39,7 +40,7 @@ namespace snow
             }
         }
 
-        virtual int process(const request_type& req, response_type* rsp, boost::asio::yield_context yield) = 0;
+        virtual int process(const request_type& req, response_type* rsp) = 0;
 
 
     private:
