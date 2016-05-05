@@ -22,7 +22,7 @@ namespace snow
 
         }
 
-        response_type do_request(const request_type& req, boost::asio::yield_context& yield){
+        response_type do_request(const request_type& req){
             auto self(shared_from_this());
             uint32_t dest_ip = inet_addr(req.get_ip().c_str());
             dest_ip = ntohl(dest_ip);
