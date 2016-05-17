@@ -19,7 +19,7 @@ namespace snow
         session_base(boost::asio::io_service& ios)
             : m_strand(ios),
               m_timer(ios),
-              m_yield__context_ptr(nullptr),
+              m_yield_context_ptr(nullptr),
               m_time_left(0) {
 
         }
@@ -41,21 +41,36 @@ namespace snow
         }
 
         boost::asio::yield_context& get_yield_context() {
-            return *m_yield__context_ptr;
+            return *m_yield_context_ptr;
+        }
+
+        //TODO
+        void yield() {
+//            m_yield_context_ptr->coro_.reset();
+            m_coro = m_yield_context_ptr->coro_.lock();
+            m_yield_context_ptr->ca_();
+        }
+        //TODO
+        void resume() {
+//            std::shared_ptr<boost::coroutines::push_coroutine<void>> coro = m_yield_context_ptr->coro_.lock();
+            (*m_coro)();
+//            (*(m_yield_context_ptr->coro_))();
         }
 
 
     protected:
         int set_yield_context_ptr(boost::asio::yield_context* yield_context_ptr) {
-            m_yield__context_ptr = yield_context_ptr;
+            m_yield_context_ptr = yield_context_ptr;
         }
 
     protected:
         boost::asio::io_service::strand  m_strand;
         boost::asio::steady_timer        m_timer;
-        boost::asio::yield_context*      m_yield__context_ptr;
+        boost::asio::yield_context*      m_yield_context_ptr;
         response_dispatch_type           m_rsp_dispatcher;
         std::size_t                      m_time_left;
+
+        std::shared_ptr<boost::coroutines::push_coroutine<void>> m_coro;
     };
 }
 

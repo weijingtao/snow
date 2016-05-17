@@ -20,7 +20,7 @@ namespace snow
         server_base()
             : m_stop_flag(true),
               m_proxy(m_ios),
-              m_thread_poll(10) {
+              m_thread_poll(1) {
 
         }
 
