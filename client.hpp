@@ -12,22 +12,21 @@
 #include "session_base.hpp"
 #include "buffer.hpp"
 #include "log.hpp"
+#include "request_base.hpp"
+#include "response_base.hpp"
 
 namespace snow
 {
     class client : public std::enable_shared_from_this<client>
     {
     public:
-        /*typedef RequestType                                             request_type;
-        typedef ResponseType                                            response_type;
-        typedef PkgCheckType                                            pkg_check_type;*/
         typedef std::shared_ptr<boost::asio::ip::tcp::socket>           tcp_socket_type;
         typedef std::shared_ptr<boost::asio::ip::udp::socket>           udp_socket_type;
-
+        typedef std::reference_wrapper<bool>                            result_type;
         typedef std::function<bool(buffer*)>                            request_serializer_type;
         typedef std::function<bool(const char*, std::size_t)>           response_parser_type;
         typedef std::function<std::size_t(const char*, std::size_t)>    pkg_spliter_type;
-        typedef std::tuple<bool, tcp_socket_type, request_serializer_type, response_parser_type, pkg_spliter_type> request_type;
+        typedef std::tuple<result_type, tcp_socket_type, request_serializer_type, response_parser_type, pkg_spliter_type> request_type;
 
         explicit client(session_base& session)
              : m_session(session.shared_from_this()),
@@ -152,6 +151,7 @@ namespace snow
                     //TODO need?
                 }
             });
+            m_session->yield();
         }
 
     protected:
