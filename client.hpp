@@ -4,12 +4,14 @@
 #include <memory>
 #include <utility>
 #include <functional>
+#include <chrono>
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/spawn.hpp>
 #include "session_base.hpp"
 #include "buffer.hpp"
+#include "log.hpp"
 
 namespace snow
 {
@@ -25,7 +27,7 @@ namespace snow
         typedef std::function<bool(buffer*)>                            request_serializer_type;
         typedef std::function<bool(const char*, std::size_t)>           response_parser_type;
         typedef std::function<std::size_t(const char*, std::size_t)>    pkg_spliter_type;
-        typedef std::tuple<tcp_socket_type, request_serializer_type, response_parser_type, pkg_spliter_type> request_type;
+        typedef std::tuple<bool, tcp_socket_type, request_serializer_type, response_parser_type, pkg_spliter_type> request_type;
 
         explicit client(session_base& session)
              : m_session(session.shared_from_this()),
@@ -94,48 +96,47 @@ namespace snow
             return result;
         }
 
-        void batch_request(std::vector<request_item>& reqs) {
-            if(reqs.empty()) {
+        void batch_request(std::vector<request_type>& requests) {
+            if(requests.empty()) {
                 return;
             }
+            m_requests = requests;
             auto self(shared_from_this());
             m_timer.expires_from_now(std::chrono::seconds(std::min(req.get_time_out(), m_session->get_time_left())));
             for(auto& request : m_requests) {
-                boost::asio::spawn(m_strand, [this, self](boost::asio::yield_context yield) {
+                boost::asio::spawn(m_strand, [this, self, &request](boost::asio::yield_context yield) {
                     try {
-                        auto socket = get_tcp_socket(std::get<0>(request));
-                        m_sockets.push_back(socket);
-                        buffer send_buffer;
-                        std::get<1>(request)(&send_buffer);
-                        boost::asio::async_write(*socket, boost::asio::buffer(send_buffer.read_index(), send_buffer.readable_bytes()), yield);
-                        std::cout << "send success" << std::endl;
+                        {
+                            buffer send_buffer;
+                            std::get<2>(request)(&send_buffer);
+                            boost::asio::async_write(*std::get<1>(request), boost::asio::buffer(send_buffer.read_index(), send_buffer.readable_bytes()), yield);
+                            SNOW_LOG_TRACE << "send " << send_buffer.readable_bytes() << " bytes" << std::endl;
+                        }
                         buffer recv_buffer;
                         std::size_t n_read  = 0;
                         std::size_t pkg_len = 0;
                         do {
                             recv_buffer.ensure_writeable_bytes(256);
                             n_read = socket->async_read_some(boost::asio::buffer(recv_buffer.write_index(), recv_buffer.writeable_bytes()), yield);
+                            SNOW_LOG_TRACE << "recv " << n_read << " bytes" << std::endl;
                             if(n_read > 0) {
                                 recv_buffer.increase_write_index(n_read);
                             } else {
-                                socket->close();
-                                m_timer.cancel();
+                                break;
                             }
-                            pkg_len = m_pkg_checker(recv_buffer.read_index(), recv_buffer.readable_bytes());
+                            pkg_len = std::get<4>(request)(recv_buffer.read_index(), recv_buffer.readable_bytes());
                         } while(0 == pkg_len);
+                        SNOW_LOG_TRACE << "pacgage len " << pkg_len << " bytes" << std::endl;
                         if(pkg_len > 0) {
-                            result = true;
-                            resume();
+                            std::get<0>(request) = true;
+                            std::get<3>(request)(recv_buffer.read_index(), recv_buffer.readable_bytes());
                         } else {
-                            socket->close();
-                            m_timer.cancel();
-                            resume();
+                            std::get<1>(request)->close();
                         }
                     } catch (std::exception& e) {
-                        socket->close();
-                        m_timer.cancel();
-                        resume();
+                        std::get<1>(request)->close();
                     }
+                    complete(1);
                 });
             }
 
@@ -144,11 +145,11 @@ namespace snow
                 m_timer.async_wait(yield[ignored_ec]);
                 if (m_timer.expires_from_now() <= std::chrono::seconds(0)) {
                     for(auto& request : m_requests) {
-                        if(std::get<0>(request)->is_open()) {
-                            std::get<0>(request)->cancel();
+                        if(std::get<1>(request)->is_open()) {
+                            std::get<1>(request)->close();
                         }
                     }
-                    resume();
+                    //TODO need?
                 }
             });
         }
@@ -171,8 +172,11 @@ namespace snow
 
 
     private:
-        void complete() {
-
+        void complete(std::size_t count) {
+            m_complete_request_count += count;
+            if(m_complete_request_count >= m_requests.size()) {
+                resume();
+            }
         }
 
         void resume() {
