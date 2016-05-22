@@ -10,7 +10,7 @@ namespace snow
 
         }
 
-        virtual bool parse_from_array(const char* req_data, std::size_t req_len) = 0;
+        virtual bool parse_from_array(const char* data, std::size_t len) = 0;
 
         virtual bool serialize_to_buffer(snow::buffer* rsp_buf) = 0;
     };
