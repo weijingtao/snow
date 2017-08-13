@@ -6,62 +6,38 @@
 #include <chrono>
 #include <tuple>
 #include <vector>
+#include <optional>
 #include <string>
 #include "snow.hpp"
 
-class echo_req : public snow::request_base
-{
+class echo_codec : public codec<std::string, std::string> {
 public:
-    virtual bool parse_from_array(const char* req_data, std::size_t req_len) {
-        m_data.append(req_data, req_len);
-        return true;
+     virtual int check(const char* data, std::size_t size) const override {
+         return size;
     }
 
-    virtual bool serialize_to_buffer(snow::buffer* rsp_buf) {
-        return true;
+    virtual std::string encode(const request_t& req) const override {
+        return req;
     }
-    std::string m_data;
+
+    virtual response_t decode(const char* data, std::size_t size) const override {
+        return std::string(data, size);
+    }
 };
 
-class echo_rsp : public snow::response_base
-{
-public:
-    virtual bool parse_from_array(const char* req_data, std::size_t req_len) {
-        return true;
-    }
-
-    virtual bool serialize_to_buffer(snow::buffer* rsp_buf) {
-        rsp_buf->ensure_writeable_bytes(m_data.size());
-        rsp_buf->append(m_data.c_str(), m_data.length());
-        return true;
-    }
-    std::string m_data;
-};
-
-class echo_session : public snow::session<echo_req, echo_rsp>
-{
+class echo_session : public snow::session<echo_codec> {
 public:
     explicit echo_session(boost::asio::io_service& ios)
-        : snow::session<echo_req, echo_rsp>(ios) {
+        : snow::session<echo_codec>{ios} {
     }
 
-    virtual int process(const request_type& req, response_type* rsp) {
-        rsp->m_data = req.m_data;
-        auto self(shared_from_this());
-        auto timer = std::make_shared<boost::asio::steady_timer>(m_strand.get_io_service());
-        timer->expires_from_now(std::chrono::seconds(3));
-
-        boost::asio::spawn(m_strand, [self, timer, this](boost::asio::yield_context yield) { timer->async_wait(yield); std::cout << "resume" << std::endl; resume(); } );
-        std::cout << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        yield();
-        std::cout << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-//        resume();
-        std::cout << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        return 0;
+    virtual std::optional<std::string> process(const std::string& req) override {
+        std::cout << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
+        return {req};
     }
 };
 
-class server : public snow::server_base<echo_session>
+class server : public snow::server<echo_session>
 {
 public:
     virtual int init() {

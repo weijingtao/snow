@@ -7,11 +7,11 @@
 
 namespace snow
 {
-    class thread_poll
+    class thread_group
     {
     public:
         typedef std::function<void(void)> task_type;
-        thread_poll(std::size_t thread_size)
+        thread_group(std::size_t thread_size)
             : m_thread_size(thread_size),
               m_threads(m_thread_size) {
 

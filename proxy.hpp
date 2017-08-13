@@ -1,5 +1,4 @@
-#ifndef _SNOW_PROXY_HPP
-#define _SNOW_PROXY_HPP
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -22,7 +21,7 @@ namespace snow
         typedef std::tuple<std::string, std::string, uint16_t>                                      end_point_type;
         typedef std::function<void(const buffer&)>                                                  response_dispatch_type;
         typedef std::function<void(const char*, std::size_t, response_dispatch_type)>               request_dispatch_type;
-        typedef std::function<std::size_t(const char*, std::size_t)>                                pkg_split_type;
+        typedef std::function<int(const char*, std::size_t)>                                pkg_split_type;
         typedef std::unique_ptr<boost::asio::io_service::strand>                                    strand_ptr_t;
         typedef std::vector<strand_ptr_t>                                                           strand_vec_t;
 
@@ -96,5 +95,3 @@ namespace snow
         request_dispatch_type             m_request_dispatcher;
     };
 }
-
-#endif //_SNOW_PROXY_HPP

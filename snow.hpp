@@ -1,10 +1,6 @@
-#ifndef _SNOW_HPP
-#define _SNOW_HPP
+#pragma once
 
 #include "log.hpp"
-#include "server_base.hpp"
-#include "request_base.hpp"
-#include "response_base.hpp"
+#include "server.hpp"
 #include "session.hpp"
-
-#endif //_SNOW_HPP
+#include "codec.hpp"
