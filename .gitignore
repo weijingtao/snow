@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+.idea/modules.xml
+.idea/snow.iml
+.idea/workspace.xml
+cmake-build-debug/

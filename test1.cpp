@@ -22,19 +22,12 @@ public:
     }
 };
 
-class server : public snow::server<echo_session>
-{
+class server : public snow::server<echo_session> {
 public:
-    virtual int init() {
-        std::tuple<std::string, std::string, uint16_t> end_point("tcp", "192.168.89.140", 10000);
-        std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
-        end_point_vec.push_back(std::move(end_point));
-        m_proxy.init(end_point_vec);
-    }
 
     virtual int check(const char* data, std::size_t size) const override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
-        if (size > 10)
+        if (size >= 10)
             return 10;
         else
             return 0;
@@ -54,10 +47,8 @@ public:
 
 int main(int argc, char* argv[]) {
     SNOW_LOG_INFO << "test1 begin" << std::endl;
-    try
-    {
+    try {
         server the_server;
-        the_server.init();
         the_server.start();
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";

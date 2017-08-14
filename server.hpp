@@ -7,6 +7,7 @@
 #include "proxy.hpp"
 #include "thread_group.hpp"
 #include "buffer.hpp"
+#include "config.hpp"
 
 namespace snow
 {
@@ -37,9 +38,6 @@ namespace snow
         }
 
     protected:
-        virtual int init() {
-            return 0;
-        }
 
         virtual int check(const char* data, std::size_t size) const = 0;
 
@@ -48,7 +46,20 @@ namespace snow
         virtual request_t decode(const char* data, std::size_t size) const = 0;
 
     private:
+
+        int init() {
+            config conf("../config.yaml");
+            SNOW_LOG_TRACE << "endpoint:\n";
+            std::for_each(conf.get_endpoints().cbegin(), conf.get_endpoints().cend(), [](const auto& ed){ SNOW_LOG_TRACE << ed << std::endl;});
+            std::tuple<std::string, std::string, uint16_t> end_point("tcp", "192.168.89.140", 10000);
+            std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
+            end_point_vec.push_back(std::move(end_point));
+            m_proxy.init(end_point_vec);
+            return 0;
+        }
+
         void run() {
+            init();
             SNOW_LOG_TRACE << "server runing" << std::endl;
             m_proxy.set_pkg_spliter(std::bind(&server<session_t>::check, this, std::placeholders::_1, std::placeholders::_2));
             m_proxy.set_request_dispatcher(std::bind(&server<session_t>::request_dispatch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

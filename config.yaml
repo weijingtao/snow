@@ -1,0 +1,18 @@
+interface :
+ - eth0:10000/udp
+ - eth1:10000/tcp
+ - eth1:10000/unix
+
+service:
+  procnum : 10 #默认为cpu物理线程数
+  log:
+    level: 3
+    format: xxa
+
+limits:
+ max_connection : 100    #tcp最大连接数
+ connection_timeout : 10000  #tcp连接超时时间，最大idle时间
+ tcp_send_buf : 4096
+ tcp_recv_buf : 4096
+
+#用户自定义配置
