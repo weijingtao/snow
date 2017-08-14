@@ -6,12 +6,13 @@
 #include <chrono>
 #include <optional>
 #include <type_traits>
+#include "log.hpp"
 
 namespace snow
 {
 
     template <typename CODEC>
-    class session : std::enable_shared_from_this<session<CODEC>> {
+    class session : public std::enable_shared_from_this<session<CODEC>> {
     public:
         using codec_t    = CODEC;
         using request_t  = typename CODEC::request_t;
@@ -20,9 +21,11 @@ namespace snow
 
 
         explicit session(boost::asio::io_service& ios)
-                : m_strand{ios},
+                : m_ios{ios},
+                  m_strand{ios},
                   m_start_time{std::chrono::steady_clock::now()} {
-
+            SNOW_LOG_TRACE << "session construct" << std::endl;
+            boost::asio::spawn(m_strand, [](boost::asio::yield_context yield) { SNOW_LOG_TRACE << "test" << std::endl; });
         }
 
         const std::chrono::steady_clock& get_start_time() const {
@@ -45,9 +48,10 @@ namespace snow
         }
 
         bool start(const request_t& req) {
+            SNOW_LOG_TRACE << "session start:" << req << std::endl;
             auto self(this->shared_from_this());
             boost::asio::spawn(m_strand,
-                               [this, self, &req](boost::asio::yield_context yield){
+                               [this, self, req](boost::asio::yield_context yield){
                                    set_yield_context_ptr(&yield);
                                    m_response_dispatcher(process(req));
                                });
@@ -67,6 +71,7 @@ namespace snow
 
     private:
         using time_point = std::result_of<decltype(std::chrono::steady_clock::now)&(void)>::type;
+        boost::asio::io_service &m_ios;
         boost::asio::strand m_strand;
         codec_t             m_codec;
         time_point m_start_time;

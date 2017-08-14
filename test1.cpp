@@ -13,14 +13,17 @@
 class echo_codec : public codec<std::string, std::string> {
 public:
      virtual int check(const char* data, std::size_t size) const override {
+         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
          return size;
     }
 
     virtual std::string encode(const request_t& req) const override {
-        return req;
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
+        return std::string("hello world!");
     }
 
     virtual response_t decode(const char* data, std::size_t size) const override {
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
         return std::string(data, size);
     }
 };
@@ -32,7 +35,7 @@ public:
     }
 
     virtual std::optional<std::string> process(const std::string& req) override {
-        std::cout << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
         return {req};
     }
 };
@@ -41,17 +44,10 @@ class server : public snow::server<echo_session>
 {
 public:
     virtual int init() {
-        std::tuple<std::string, std::string, uint16_t> end_point("tcp", "", 50000);
+        std::tuple<std::string, std::string, uint16_t> end_point("tcp", "192.168.89.140", 10000);
         std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
         end_point_vec.push_back(std::move(end_point));
         m_proxy.init(end_point_vec);
-    }
-
-    virtual std::size_t pkg_check(const char* data, std::size_t len) {
-        if(len >= 4)
-            return 4;
-        else
-            return 0;
     }
 };
 
