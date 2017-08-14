@@ -16,13 +16,11 @@ namespace snow
         using session_t  = SESSION;
         using request_t  = typename SESSION::request_t;
         using response_t = typename SESSION::response_t;
-        using codec_t    = typename SESSION::codec_t;
         using response_dispatch_t = typename SESSION::response_dispatch_t;
 
         server()
             : m_proxy(m_ios),
               m_thread_poll(1) {
-
         }
 
         virtual ~server() {
@@ -43,10 +41,16 @@ namespace snow
             return 0;
         }
 
+        virtual int check(const char* data, std::size_t size) const = 0;
+
+        virtual std::string encode(const response_t& req) const = 0;
+
+        virtual request_t decode(const char* data, std::size_t size) const = 0;
+
     private:
         void run() {
             SNOW_LOG_TRACE << "server runing" << std::endl;
-            m_proxy.set_pkg_spliter(std::bind(&codec_t::check, std::ref(m_codec), std::placeholders::_1, std::placeholders::_2));
+            m_proxy.set_pkg_spliter(std::bind(&server<session_t>::check, this, std::placeholders::_1, std::placeholders::_2));
             m_proxy.set_request_dispatcher(std::bind(&server<session_t>::request_dispatch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
             m_ios.run();
         }
@@ -55,7 +59,7 @@ namespace snow
             SNOW_LOG_TRACE <<  "new request : " << req_data << std::endl;
             auto new_session = std::make_shared<session_t>(m_ios);
             new_session->set_response_dispatcher([this, rsp_dispatcher](std::optional<response_t>&& rsp) {
-                std::string str_rsp = m_codec.encode(*rsp);
+                std::string str_rsp = encode(*rsp);
                 buffer b;
                 b.append(str_rsp.data(), str_rsp.size());
                 rsp_dispatcher(b);
@@ -72,6 +76,5 @@ namespace snow
         boost::asio::io_service m_ios;
         proxy                   m_proxy;
         thread_group            m_thread_poll;
-        codec_t                 m_codec;
     };
 }

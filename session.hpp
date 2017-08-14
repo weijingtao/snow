@@ -11,12 +11,11 @@
 namespace snow
 {
 
-    template <typename CODEC>
-    class session : public std::enable_shared_from_this<session<CODEC>> {
+    template <typename Req, typename Rsp>
+    class session : public std::enable_shared_from_this<session<Req, Rsp>> {
     public:
-        using codec_t    = CODEC;
-        using request_t  = typename CODEC::request_t;
-        using response_t = typename CODEC::response_t;
+        using request_t  = Req;
+        using response_t = Rsp;
         using response_dispatch_t = std::function<void(std::optional<response_t>&&)>;
 
 
@@ -73,7 +72,6 @@ namespace snow
         using time_point = std::result_of<decltype(std::chrono::steady_clock::now)&(void)>::type;
         boost::asio::io_service &m_ios;
         boost::asio::strand m_strand;
-        codec_t             m_codec;
         time_point m_start_time;
         time_point m_deadline;
         response_dispatch_t       m_response_dispatcher;

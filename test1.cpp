@@ -10,28 +10,10 @@
 #include <string>
 #include "snow.hpp"
 
-class echo_codec : public codec<std::string, std::string> {
-public:
-     virtual int check(const char* data, std::size_t size) const override {
-         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
-         return size;
-    }
-
-    virtual std::string encode(const request_t& req) const override {
-        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
-        return std::string("hello world!");
-    }
-
-    virtual response_t decode(const char* data, std::size_t size) const override {
-        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
-        return std::string(data, size);
-    }
-};
-
-class echo_session : public snow::session<echo_codec> {
+class echo_session : public snow::session<std::string, std::string> {
 public:
     explicit echo_session(boost::asio::io_service& ios)
-        : snow::session<echo_codec>{ios} {
+        : snow::session<std::string, std::string>{ios} {
     }
 
     virtual std::optional<std::string> process(const std::string& req) override {
@@ -48,6 +30,24 @@ public:
         std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
         end_point_vec.push_back(std::move(end_point));
         m_proxy.init(end_point_vec);
+    }
+
+    virtual int check(const char* data, std::size_t size) const override {
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
+        if (size > 10)
+            return 10;
+        else
+            return 0;
+    }
+
+    virtual std::string encode(const response_t& req) const override {
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
+        return req;
+    }
+
+    virtual request_t decode(const char* data, std::size_t size) const override {
+        SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
+        return std::string(data, size);
     }
 };
 
