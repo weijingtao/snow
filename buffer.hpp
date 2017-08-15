@@ -1,5 +1,4 @@
-#ifndef _SNOW_BUFFER_HPP
-#define _SNOW_BUFFER_HPP
+#pragma once
 
 #include <cassert>
 #include <memory>
@@ -95,5 +94,3 @@ namespace snow
         std::size_t             m_write_index;
     };
 }
-
-#endif //_SNOW_BUFFER_HPP

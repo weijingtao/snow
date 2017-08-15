@@ -1,5 +1,4 @@
-#ifndef _SNOW_LOG_HPP
-#define _SNOW_LOG_HPP
+#pragma once
 
 #include <iostream>
 /*
@@ -18,5 +17,3 @@
 #define SNOW_LOG_WARNING std::cerr
 #define SNOW_LOG_ERROR   std::cerr
 #define SNOW_LOG_FATAL   std::cerr
-
-#endif //_SNOW_LOG_HPP

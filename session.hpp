@@ -1,5 +1,4 @@
-#ifndef _SNOW_SESSION_HPP
-#define _SNOW_SESSION_HPP
+#pragma once
 
 #include <memory>
 #include <functional>
@@ -78,7 +77,3 @@ namespace snow
         boost::asio::yield_context*      m_yield_context_ptr;
     };
 }
-
-
-
-#endif //_SNOW_SESSION_HPP

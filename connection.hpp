@@ -1,5 +1,4 @@
-#ifndef _SNOW_CONNECTION_HPP
-#define _SNOW_CONNECTION_HPP
+#pragma once
 
 #include <memory>
 #include <functional>
@@ -14,9 +13,9 @@ namespace snow
     class connection : public std::enable_shared_from_this<connection>
     {
     public:
-        typedef std::function<void(const buffer&)>                                                  response_dispatch_type;
-        typedef std::function<void(const char*, std::size_t, response_dispatch_type)>               request_dispatch_type;
-        typedef std::function<std::size_t(const char*, std::size_t)>                                pkg_split_type;
+        typedef std::function<void(const buffer&)>                                    response_dispatch_type;
+        typedef std::function<void(const char*, std::size_t, response_dispatch_type)> request_dispatch_type;
+        typedef std::function<std::size_t(const char*, std::size_t)>                  pkg_split_type;
 
         connection(boost::asio::ip::tcp::socket& socket,
                    request_dispatch_type request_dispatcher,
@@ -125,6 +124,3 @@ namespace snow
         std::size_t                                    m_time_out;
     };
 }
-
-
-#endif //_SNOW_CONNECTION_HPP

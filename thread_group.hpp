@@ -6,8 +6,7 @@
 
 namespace snow
 {
-    class thread_group
-    {
+    class thread_group {
     public:
         typedef std::function<void(void)> task_type;
         thread_group() {

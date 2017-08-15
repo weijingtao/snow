@@ -1,5 +1,4 @@
-#ifndef _SNOW_ACCEPTOR_HPP
-#define _SNOW_ACCEPTOR_HPP
+#pragma once
 
 #include <functional>
 #include <boost/asio.hpp>
@@ -51,5 +50,3 @@ namespace snow
         new_connect_call_back_t         m_new_connect_call_back;
     };
 }
-
-#endif //_SNOW_ACCEPTOR_HPP

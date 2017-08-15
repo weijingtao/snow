@@ -15,8 +15,7 @@
 
 namespace snow
 {
-    class proxy
-    {
+    class proxy {
     public:
         typedef std::tuple<std::string, std::string, uint16_t>                                      end_point_type;
         typedef std::function<void(const buffer&)>                                                  response_dispatch_type;
