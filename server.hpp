@@ -21,8 +21,7 @@ namespace snow
         using response_dispatch_t = typename SESSION::response_dispatch_t;
 
         server()
-            : m_proxy(m_ios),
-              m_thread_poll(1) {
+            : m_proxy(m_ios) {
         }
 
         virtual ~server() {
@@ -48,32 +47,25 @@ namespace snow
 
     private:
 
-        int init() {
+        void run() {
+            SNOW_LOG_TRACE << "server runing" << std::endl;
             config conf("../config.yaml");
             std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
             for(auto &endpoint : conf.get_endpoints()) {
-                SNOW_LOG_TRACE << endpoint << std::endl;
                 auto pos1 = endpoint.find_first_of(':');
                 auto pos2 = endpoint.find_first_of('/');
-                if (pos1 == std::string::npos || pos2 == std::string::npos) {
+                if (pos1 == std::string::npos || pos2 == std::string::npos || pos1 >= pos2) {
                     break;
                 }
-                SNOW_LOG_TRACE << endpoint.substr(0, pos1) << " "
-                               << endpoint.substr(pos1+1, pos2 - pos1 -1) << " "
-                               << endpoint.substr(pos2+1) << std::endl;
                 end_point_vec.emplace_back(endpoint.substr(pos2+1), "", std::atoi(endpoint.substr(pos1+1, pos2 - pos1 -1).c_str()));
             }
-
             m_proxy.init(end_point_vec);
-            return 0;
-        }
-
-        void run() {
-            init();
-            SNOW_LOG_TRACE << "server runing" << std::endl;
-            m_proxy.set_pkg_spliter(std::bind(&server<session_t>::check, this, std::placeholders::_1, std::placeholders::_2));
-            m_proxy.set_request_dispatcher(std::bind(&server<session_t>::request_dispatch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-            m_ios.run();
+            using namespace std::placeholders;
+            m_proxy.set_pkg_spliter(std::bind(&server<session_t>::check, this, _1, _2));
+            m_proxy.set_request_dispatcher(std::bind(&server<session_t>::request_dispatch, this, _1, _2, _3));
+//            m_ios.run();
+            m_thread_group.start([this] {m_ios.run();}, conf.get_proc_num() );
+            m_thread_group.join();
         }
 
         void request_dispatch(const char* req_data, std::size_t req_len, typename proxy::response_dispatch_type rsp_dispatcher) {
@@ -96,6 +88,6 @@ namespace snow
         std::once_flag          m_start_flag;
         boost::asio::io_service m_ios;
         proxy                   m_proxy;
-        thread_group            m_thread_poll;
+        thread_group            m_thread_group;
     };
 }

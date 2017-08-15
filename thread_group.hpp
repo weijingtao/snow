@@ -1,5 +1,4 @@
-#ifndef _THREAD_POLL_HPP
-#define _THREAD_POLL_HPP
+#pragma once
 
 #include <thread>
 #include <vector>
@@ -11,32 +10,25 @@ namespace snow
     {
     public:
         typedef std::function<void(void)> task_type;
-        thread_group(std::size_t thread_size)
-            : m_thread_size(thread_size),
-              m_threads(m_thread_size) {
+        thread_group() {
 
         }
 
-        void start(task_type task) {
-            for(auto& thread : m_threads) {
-                thread = std::thread(task);
+        void start(task_type task, std::size_t thread_size) {
+            for(std::size_t i = 0; i < thread_size; ++i) {
+                m_threads.emplace_back(task);
             }
+        }
+
+        void join() {
             for(auto& thread : m_threads) {
                 thread.join();
-            }
-        }
-
-        void stop() {
-            for(auto& thread : m_threads) {
             }
         }
 
 
 
     private:
-        std::size_t              m_thread_size;
         std::vector<std::thread> m_threads;
     };
 }
-
-#endif //_THREAD_POLL_HPP
