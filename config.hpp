@@ -107,7 +107,6 @@ namespace snow
         }
 
 
-
         static const int  MIN_PROC_NUM;
         static const int  DEFAULT_CONNECTION_TIMEOUT;
         static const int  MIN_CONNECTION_TIMEOUT;

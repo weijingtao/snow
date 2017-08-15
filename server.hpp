@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <array>
 #include <mutex>
+#include <string>
 #include <boost/asio.hpp>
 #include "proxy.hpp"
 #include "thread_group.hpp"
@@ -49,11 +50,20 @@ namespace snow
 
         int init() {
             config conf("../config.yaml");
-            SNOW_LOG_TRACE << "endpoint:\n";
-            std::for_each(conf.get_endpoints().cbegin(), conf.get_endpoints().cend(), [](const auto& ed){ SNOW_LOG_TRACE << ed << std::endl;});
-            std::tuple<std::string, std::string, uint16_t> end_point("tcp", "192.168.89.140", 10000);
             std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
-            end_point_vec.push_back(std::move(end_point));
+            for(auto &endpoint : conf.get_endpoints()) {
+                SNOW_LOG_TRACE << endpoint << std::endl;
+                auto pos1 = endpoint.find_first_of(':');
+                auto pos2 = endpoint.find_first_of('/');
+                if (pos1 == std::string::npos || pos2 == std::string::npos) {
+                    break;
+                }
+                SNOW_LOG_TRACE << endpoint.substr(0, pos1) << " "
+                               << endpoint.substr(pos1+1, pos2 - pos1 -1) << " "
+                               << endpoint.substr(pos2+1) << std::endl;
+                end_point_vec.emplace_back(endpoint.substr(pos2+1), "", std::atoi(endpoint.substr(pos1+1, pos2 - pos1 -1).c_str()));
+            }
+
             m_proxy.init(end_point_vec);
             return 0;
         }
