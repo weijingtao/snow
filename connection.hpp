@@ -8,14 +8,12 @@
 #include "buffer.hpp"
 #include "log.hpp"
 
-namespace snow
-{
-    class connection : public std::enable_shared_from_this<connection>
-    {
+namespace snow {
+    class connection : public std::enable_shared_from_this<connection> {
     public:
         typedef std::function<void(const buffer&)>                                    response_dispatch_type;
         typedef std::function<void(const char*, std::size_t, response_dispatch_type)> request_dispatch_type;
-        typedef std::function<std::size_t(const char*, std::size_t)>                  pkg_split_type;
+        typedef std::function<int (const char*, std::size_t)>                  pkg_split_type;
 
         connection(boost::asio::ip::tcp::socket& socket,
                    request_dispatch_type request_dispatcher,
@@ -45,7 +43,7 @@ namespace snow
                 try {
                     std::size_t n_read  = 0;
                     while (m_socket.is_open()) {
-                        std::size_t pkg_len = 0;
+                        int pkg_len = 0;
                         do {
                             m_recv_buffer.ensure_writeable_bytes(RECV_BUFFER_MIN_WRITEABLE_BYTES);
                             std::size_t n = m_socket.async_read_some(boost::asio::buffer(m_recv_buffer.write_index(), m_recv_buffer.writeable_bytes()), yield);

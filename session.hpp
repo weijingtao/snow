@@ -3,8 +3,8 @@
 #include <memory>
 #include <functional>
 #include <chrono>
-#include <optional>
 #include <type_traits>
+#include <boost/optional.hpp>
 #include "log.hpp"
 
 namespace snow
@@ -15,7 +15,7 @@ namespace snow
     public:
         using request_t  = Req;
         using response_t = Rsp;
-        using response_dispatch_t = std::function<void(std::optional<response_t>&&)>;
+        using response_dispatch_t = std::function<void(boost::optional<response_t>&&)>;
 
 
         explicit session(boost::asio::io_service& ios)
@@ -38,7 +38,7 @@ namespace snow
             auto now = std::chrono::steady_clock::now();
             if (m_deadline > now)
                 return m_deadline - now;
-            return {0};
+            return std::chrono::milliseconds{0};
         }
 
         void set_response_dispatcher(response_dispatch_t response_dispatcher) {
@@ -53,13 +53,15 @@ namespace snow
                                    set_yield_context_ptr(&yield);
                                    m_response_dispatcher(process(req));
                                });
+            return true;
         }
 
-        virtual std::optional<response_t> process(const request_t& req) = 0;
+        virtual boost::optional<response_t> process(const request_t& req) = 0;
 
     private:
         int set_yield_context_ptr(boost::asio::yield_context* yield_context_ptr) {
             m_yield_context_ptr = yield_context_ptr;
+            return 0;
         }
 
         boost::asio::yield_context& get_yield_context() {

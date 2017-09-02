@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sys/sysinfo.h>
+//#include <sys/sysinfo.h>
 #include <cstdint>
 #include <exception>
 #include <algorithm>
@@ -17,7 +17,7 @@ namespace snow
     class config {
     public:
         config(const std::string& conf_file_name)
-                : m_proc_num(::get_nprocs()),
+                : m_proc_num(2/*::get_nprocs()*/),
                   m_connection_timeout(DEFAULT_CONNECTION_TIMEOUT),
                   m_max_connecction(DEFAULT_MAX_CONNECTION),
                   m_max_request_per_second(DEFAULT_MAX_REQUEST_PER_SECOND),
@@ -157,4 +157,6 @@ namespace snow
 
     template <typename T>
     const char * const config<T>::DEFAULT_LOG_FORMATE = "test";
+
+    using Config = config<void>;
 }

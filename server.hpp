@@ -49,7 +49,7 @@ namespace snow
 
         void run() {
             SNOW_LOG_TRACE << "server runing" << std::endl;
-            config conf("../config.yaml");
+            Config conf("../config.yaml");
             std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
             for(auto &endpoint : conf.get_endpoints()) {
                 auto pos1 = endpoint.find_first_of(':');
@@ -71,7 +71,7 @@ namespace snow
         void request_dispatch(const char* req_data, std::size_t req_len, typename proxy::response_dispatch_type rsp_dispatcher) {
             SNOW_LOG_TRACE <<  "new request : " << req_data << std::endl;
             auto new_session = std::make_shared<session_t>(m_ios);
-            new_session->set_response_dispatcher([this, rsp_dispatcher](std::optional<response_t>&& rsp) {
+            new_session->set_response_dispatcher([this, rsp_dispatcher](boost::optional<response_t>&& rsp) {
                 std::string str_rsp = encode(*rsp);
                 buffer b;
                 b.append(str_rsp.data(), str_rsp.size());

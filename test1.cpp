@@ -6,7 +6,7 @@
 #include <chrono>
 #include <tuple>
 #include <vector>
-#include <optional>
+#include <boost/optional.hpp>
 #include <string>
 #include "snow.hpp"
 
@@ -16,7 +16,7 @@ public:
         : snow::session<std::string, std::string>{ios} {
     }
 
-    virtual std::optional<std::string> process(const std::string& req) override {
+    virtual boost::optional<std::string> process(const std::string& req) override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
         return {req};
     }
