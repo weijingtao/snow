@@ -8,7 +8,7 @@
 namespace snow {
     class WaitGroup {
     public:
-        WaitGroup(boost::asio::io_service& ios, boost::asio::yield_context& yield, std::size_t count)
+        WaitGroup(boost::asio::io_service& ios, boost::asio::yield_context& yield, std::size_t count = 0)
                 : m_deadline_timer{ios}
                 , m_yield{yield}
                 , m_count{count} {
