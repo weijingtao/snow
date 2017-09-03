@@ -13,28 +13,29 @@ namespace snow {
         SEND_ERROR,
         RECV_ERROR
     };
+    namespace client {
+        template <typename REQ, typename RSP>
+        class Codec : public detail::CodecBase {
+        public:
+            using request_t = REQ;
+            using response_t = RSP;
 
-    template <typename REQ, typename RSP>
-    class Codec : public detail::CodecBase {
-    public:
-        using request_t = REQ;
-        using response_t = RSP;
 
+            Codec() = default;
 
-        Codec() = default;
+            virtual ~Codec() = default;
 
-        virtual ~Codec() = default;
+            request_t& get_request() { return m_request; }
 
-        request_t& get_request() { return m_request; }
+            const request_t& get_request() const { return m_request; }
 
-        const request_t& get_request() const { return m_request; }
+            response_t& get_response() { return m_response; }
 
-        response_t& get_response() { return m_response; }
+            const response_t& get_response() const { return m_response; }
 
-        const response_t& get_response() const { return m_response; }
-
-    protected:
-        request_t   m_request;
-        response_t  m_response;
-    };
+        protected:
+            request_t   m_request;
+            response_t  m_response;
+        };
+    }
 }

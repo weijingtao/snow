@@ -13,9 +13,7 @@
 #include <vector>
 #include <boost/optional.hpp>
 #include <string>
-#include "client/client.hpp"
-#include "client/codec.hpp"
-#include "log.hpp"
+#include "snow.hpp"
 
 class AddCodec : public snow::Codec<uint32_t, uint32_t> {
 public:

@@ -3,7 +3,7 @@
 #include <cassert>
 #include <memory>
 #include <array>
-#include "../log.hpp"
+#include "log/log.hpp"
 
 namespace snow {
     template <std::size_t MaxSize>

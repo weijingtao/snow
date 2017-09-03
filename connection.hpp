@@ -6,7 +6,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/spawn.hpp>
 #include "buffer.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 
 namespace snow {
     class connection : public std::enable_shared_from_this<connection> {

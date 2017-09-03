@@ -5,7 +5,7 @@
 #include <chrono>
 #include <type_traits>
 #include <boost/optional.hpp>
-#include "log.hpp"
+#include "log/log.hpp"
 
 namespace snow
 {

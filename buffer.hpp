@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <memory>
-#include "log.hpp"
+#include "log/log.hpp"
 
 namespace snow {
     class buffer {

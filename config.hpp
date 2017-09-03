@@ -9,7 +9,7 @@
 #include <vector>
 #include <locale>
 #include "yaml-cpp/yaml.h"
-#include "log.hpp"
+#include "log/log.hpp"
 
 namespace snow
 {

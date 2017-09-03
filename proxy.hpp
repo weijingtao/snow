@@ -10,7 +10,7 @@
 #include <boost/asio.hpp>
 #include "connection.hpp"
 #include "acceptor.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 #include "buffer.hpp"
 
 namespace snow
