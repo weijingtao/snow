@@ -77,7 +77,7 @@ namespace snow
                 b.append(str_rsp.data(), str_rsp.size());
                 rsp_dispatcher(b);
             });
-            new_session->start(std::string(req_data, req_len));
+            new_session->start(decode(req_data, req_len));
         }
 
     private:

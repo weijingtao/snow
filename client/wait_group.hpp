@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
+#include "log.hpp"
 
 namespace snow {
     class WaitGroup {
@@ -15,12 +16,13 @@ namespace snow {
                 : m_deadline_timer{ios}
                 , m_yield{yield}
                 , m_seq{100} {
-
+            SNOW_LOG_TRACE << __func__ << std::endl;
         }
 
         ~WaitGroup() {
             m_deadline_timer.cancel();
             cancel_all();
+            SNOW_LOG_TRACE << __func__ << std::endl;
         }
 
         WaitGroup(const WaitGroup&) = delete;
@@ -30,21 +32,25 @@ namespace snow {
         std::size_t add(cancel_t&& cancel) {
             auto id = ++m_seq;
             m_cancels[id] = cancel;
+            SNOW_LOG_TRACE << "add cancel id " << id << std::endl;
             return id;
         }
 
         void done(std::size_t id) {
             m_cancels.erase(id);
+            SNOW_LOG_TRACE << "done cancel id " << id << std::endl;
             if(m_cancels.empty()) {
+                SNOW_LOG_TRACE << "wait done all" << std::endl;
                 m_deadline_timer.cancel();
             }
         }
 
         void wait(std::chrono::milliseconds wait_time) {
-            m_deadline_timer.expires_from_now(boost::posix_time::seconds(1));
+            m_deadline_timer.expires_from_now(boost::posix_time::seconds(10));
             boost::system::error_code ec;
             m_deadline_timer.async_wait(m_yield[ec]);
-            if (m_deadline_timer.expires_from_now() <= std::chrono::seconds(0)) {
+            if (m_deadline_timer.expires_from_now() <= boost::posix_time::seconds(0)) {
+                SNOW_LOG_TRACE << "wait group timeout" << std::endl;
                 cancel_all();
             }
         }

@@ -2,6 +2,7 @@
 // Created by weitao on 3/5/16.
 //
 
+#include <cstdint>
 #include <iostream>
 #include <chrono>
 #include <tuple>
@@ -10,15 +11,15 @@
 #include <string>
 #include "snow.hpp"
 
-class echo_session : public snow::session<std::string, std::string> {
+class echo_session : public snow::session<uint32_t, uint32_t> {
 public:
     explicit echo_session(boost::asio::io_service& ios)
-        : snow::session<std::string, std::string>{ios} {
+        : snow::session<uint32_t , uint32_t >{ios} {
     }
 
-    virtual boost::optional<std::string> process(const std::string& req) override {
+    virtual boost::optional<uint32_t> process(const uint32_t & req) override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
-        return {req};
+        return {req + 10};
     }
 };
 
@@ -27,20 +28,20 @@ public:
 
     virtual int check(const char* data, std::size_t size) const override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
-        if (size >= 10)
-            return 10;
+        if (size >= 4)
+            return 4;
         else
             return 0;
     }
 
     virtual std::string encode(const response_t& req) const override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << req << std::endl;
-        return req;
+        return std::string((char*)&req, sizeof(req));
     }
 
     virtual request_t decode(const char* data, std::size_t size) const override {
         SNOW_LOG_TRACE << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << ":" << size << std::endl;
-        return std::string(data, size);
+        return *(uint32_t*)(data);
     }
 };
 

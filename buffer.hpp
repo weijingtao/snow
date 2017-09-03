@@ -4,10 +4,8 @@
 #include <memory>
 #include "log.hpp"
 
-namespace snow
-{
-    class buffer
-    {
+namespace snow {
+    class buffer {
     public:
         static const std::size_t INIT_SIZE = 1024;
         buffer(std::size_t init_size = INIT_SIZE)
