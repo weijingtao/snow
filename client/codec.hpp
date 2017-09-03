@@ -7,6 +7,14 @@ class Codec {
 public:
     using request_t = REQ;
     using response_t = RSP;
+    enum ErrorCode {
+        OK = 0,
+        Check_ERROR = 1,
+        ENCODE_ERROR,
+        ECODE_ERROR,
+        SEND_ERROR,
+        RECV_ERROR
+    };
 
     Codec() : m_error_code{0} {}
 
@@ -33,11 +41,15 @@ public:
         m_error_message = error_messge;
     }
 
+    explicit operator bool() { return 0 == m_error_code; }
+
     virtual int check(const char* data, std::size_t size) const = 0;
 
     virtual std::string encode() const = 0;
 
     virtual int decode(const char* data, std::size_t size) const = 0;
+
+    virtual std::string get_dest_addr() const = 0;
 
 private:
     request_t   m_request;

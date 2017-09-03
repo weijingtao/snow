@@ -3,5 +3,5 @@
 #include "log.hpp"
 #include "server.hpp"
 #include "session.hpp"
-#include "codec.hpp"
+#include "client/codec.hpp"
 #include "config.hpp"
