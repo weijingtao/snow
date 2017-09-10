@@ -2,23 +2,19 @@
 // Created by terrywei on 2017/9/3.
 //
 
-//
-// Created by weitao on 3/5/16.
-//
-
 #include <cstdint>
 #include <iostream>
-#include <chrono>
-#include <tuple>
 #include <vector>
 #include <boost/optional.hpp>
 #include <string>
 #include "snow.hpp"
 
+static auto logger = spdlog::basic_logger_mt("test2", "./test2.txt", true);
+
 class AddCodec : public snow::Codec<uint32_t, uint32_t> {
 public:
     virtual int check(const char* data, std::size_t size) const override {
-        SNOW_LOG_TRACE << "check size " << size << std::endl;
+        logger->trace("check size {}", size);
         if(size < sizeof(uint32_t)) {
             return 0;
         } else {
@@ -43,32 +39,25 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    SNOW_LOG_INFO << "test2 begin" << std::endl;
-    boost::asio::io_service ios;
-    boost::asio::spawn(ios, [&ios](boost::asio::yield_context yield) mutable {
-        AddCodec add;
-        add.get_request() = 3;
-        AddCodec add1;
-        add1.get_request() = 6;
-        snow::Client client(ios, yield);
-        client.request({&add, &add1}, std::chrono::milliseconds(100));
-        SNOW_LOG_INFO << "request success, resp = " << add.get_response() << std::endl;
-        SNOW_LOG_INFO << "request success, resp = " << add1.get_response() << std::endl;
-    });
-    boost::asio::spawn(ios, [&ios](boost::asio::yield_context yield) mutable {
-        std::vector<std::unique_ptr<AddCodec>> adds;
-        for(uint32_t i = 0; i < 200; ++i) {
-            adds.emplace_back(new AddCodec);
-            adds.back()->get_request() = i;
-        }
-        snow::Client client(ios, yield);
-        client.request(adds, std::chrono::milliseconds(100));
-        for (auto& add : adds) {
-            SNOW_LOG_INFO << "request success, resp = " << add->get_response() << std::endl;
-        }
-    });
-    ios.run();
-    SNOW_LOG_INFO << "test2 end" << std::endl;
+    logger->set_level(spdlog::level::trace);
+    logger->trace("test2 begin");
+    for(int i = 0; i < 1; ++i) {
+        boost::asio::io_service ios;
+        boost::asio::spawn(ios, [&ios](boost::asio::yield_context yield) mutable {
+            std::vector<std::unique_ptr<AddCodec>> adds;
+            for (uint32_t i = 0; i < 1; ++i) {
+                adds.emplace_back(new AddCodec);
+                adds.back()->get_request() = i;
+            }
+            snow::Client client(ios, yield);
+            client.request(adds, std::chrono::milliseconds(100));
+            for (auto &add : adds) {
+                logger->trace("request success, req {}, resp = {}", add->get_request(), add->get_response());
+            }
+        });
+        ios.run();
+    }
+    logger->trace("test2 end");
 
     return 0;
 }

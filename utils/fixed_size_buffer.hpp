@@ -12,7 +12,7 @@ namespace snow {
         FixedSizeBuffer()
              : m_read_index(0),
                m_write_index(0) {
-            SNOW_LOG_TRACE << "buffer construct" << std::endl;
+            SNOW_LOG_TRACE("buffer construct");
         }
 
         ~FixedSizeBuffer() = default;
@@ -50,8 +50,20 @@ namespace snow {
         }
 
         void append(const char * data, std::size_t len) {
-            std::copy(data, data + len, read_index());
+            std::copy(data, data + len, write_index());
             increase_write_index(len);
+        }
+
+        void adjuest() {
+            if(m_write_index == m_read_index) {
+                m_write_index = m_read_index = 0;
+            }
+            std::move(m_buffer.begin() + m_read_index,
+                      m_buffer.begin() + m_write_index,
+                      m_buffer.begin());
+            std::size_t old_read_index = m_read_index;
+            m_read_index   = 0;
+            m_write_index -= old_read_index;
         }
 
     private:

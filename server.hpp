@@ -7,11 +7,12 @@
 #include <boost/asio.hpp>
 #include "proxy.hpp"
 #include "thread_group.hpp"
-#include "buffer.hpp"
+#include "utils/buffer.hpp"
+#include "utils/type.hpp"
+#include "log/log.hpp"
 #include "config.hpp"
 
-namespace snow
-{
+namespace snow {
     template <typename SESSION>
     class server {
     public:
@@ -27,6 +28,9 @@ namespace snow
         virtual ~server() {
             stop();
         }
+
+        server(const server&) = delete;
+        server& operator=(const server&) = delete;
 
         void start() {
             std::call_once(m_start_flag, &server<session_t>::run, this);
@@ -48,7 +52,7 @@ namespace snow
     private:
 
         void run() {
-            SNOW_LOG_TRACE << "server runing" << std::endl;
+            SNOW_LOG_TRACE("server runing");
             Config conf("../config.yaml");
             std::vector<std::tuple<std::string, std::string, uint16_t>> end_point_vec;
             for(auto &endpoint : conf.get_endpoints()) {
@@ -57,32 +61,28 @@ namespace snow
                 if (pos1 == std::string::npos || pos2 == std::string::npos || pos1 >= pos2) {
                     break;
                 }
-                end_point_vec.emplace_back(endpoint.substr(pos2+1), "", std::atoi(endpoint.substr(pos1+1, pos2 - pos1 -1).c_str()));
+                end_point_vec.emplace_back(endpoint.substr(pos2+1),
+                                           "",
+                                           std::atoi(endpoint.substr(pos1+1, pos2 - pos1 -1).c_str()));
             }
             m_proxy.init(end_point_vec);
             using namespace std::placeholders;
             m_proxy.set_pkg_spliter(std::bind(&server<session_t>::check, this, _1, _2));
             m_proxy.set_request_dispatcher(std::bind(&server<session_t>::request_dispatch, this, _1, _2, _3));
-//            m_ios.run();
             m_thread_group.start([this] {m_ios.run();}, conf.get_proc_num() );
             m_thread_group.join();
         }
 
-        void request_dispatch(const char* req_data, std::size_t req_len, typename proxy::response_dispatch_type rsp_dispatcher) {
-            SNOW_LOG_TRACE <<  "new request : " << req_data << std::endl;
+        void request_dispatch(const char* req_data, std::size_t req_len, utils::response_dispatch_t rsp_dispatcher) {
+            SNOW_LOG_TRACE("new request size {}", req_len);
             auto new_session = std::make_shared<session_t>(m_ios);
             new_session->set_response_dispatcher([this, rsp_dispatcher](boost::optional<response_t>&& rsp) {
                 std::string str_rsp = encode(*rsp);
-                buffer b;
-                b.append(str_rsp.data(), str_rsp.size());
-                rsp_dispatcher(b);
+                rsp_dispatcher(str_rsp.data(), str_rsp.size());
             });
             new_session->start(decode(req_data, req_len));
         }
 
-    private:
-        server(const server&) = delete;
-        server& operator=(const server&) = delete;
 
     protected:
         std::once_flag          m_start_flag;

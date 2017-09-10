@@ -13,7 +13,7 @@
 #include "client/codec.hpp"
 #include "utils/fixed_size_buffer.hpp"
 #include "log/log.hpp"
-#include "connection.hpp"
+#include "Connection.hpp"
 
 
 namespace snow {
@@ -26,7 +26,7 @@ namespace snow {
             Client(boost::asio::io_service& ios, boost::asio::yield_context& yield)
                     : m_ios{ios}
                     , m_yield{yield} {
-                SNOW_LOG_TRACE << __func__ << std::endl;
+                SNOW_LOG_TRACE(__func__);
             }
 
             template <typename Codec>

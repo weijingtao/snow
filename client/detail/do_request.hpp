@@ -29,7 +29,7 @@ namespace snow {
                         m_codec.set_error_code(ENCODE_ERROR);
                         return;
                     }
-                    SNOW_LOG_TRACE << "readable bytes " << encode_buffer.readable_bytes() << std::endl;
+                    SNOW_LOG_TRACE("readable bytes {}", encode_buffer.readable_bytes());
                     boost::asio::async_write(*m_socket,
                                              boost::asio::buffer(encode_buffer.read_index(), encode_buffer.readable_bytes()),
                                              std::bind(&DoRequest::write_finish_handler,
@@ -45,7 +45,13 @@ namespace snow {
                 std::unique_ptr<TcpSocket> get_tcp_socket() {
                     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address_v4::from_string("127.0.0.1"), 10000);
                     std::unique_ptr<TcpSocket> socket{new TcpSocket(m_ios)};
-                    socket->connect(endpoint);
+                    try {
+                        socket->connect(endpoint);
+                    } catch (std::exception e) {
+
+                    }
+
+
                     return std::move(socket);
                 }
 
@@ -58,7 +64,7 @@ namespace snow {
                         m_codec.set_error_code(SEND_ERROR);
                         return;
                     } else {
-                        SNOW_LOG_TRACE << "write success" << std::endl;
+                        SNOW_LOG_TRACE("write success");
                         boost::asio::async_read(*m_socket,
                                                 boost::asio::buffer(m_buf.write_index(), m_buf.writeable_bytes()),
                                                 std::bind(&DoRequest::completion_condition,
@@ -78,7 +84,7 @@ namespace snow {
                         return 0;
                     } else {
                         const int check_ret = m_codec.check(m_buf.read_index(), bytes_transferred);
-                        SNOW_LOG_TRACE << "check ret " << check_ret << std::endl;
+                        SNOW_LOG_TRACE("check ret {}", check_ret);
                         if(check_ret > 0) {
                             return 0;
                         } else if(check_ret == 0) {

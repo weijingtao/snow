@@ -101,7 +101,7 @@ namespace snow
                 }
                 return 0;
             } catch (std::exception& e) {
-                SNOW_LOG_FATAL << "config init failed : " << e.what();
+                SNOW_LOG_FATAL("config init failed : {}",e.what());
                 return -1;
             }
         }

@@ -7,8 +7,7 @@
 #include <boost/optional.hpp>
 #include "log/log.hpp"
 
-namespace snow
-{
+namespace snow {
 
     template <typename Req, typename Rsp>
     class session : public std::enable_shared_from_this<session<Req, Rsp>> {
@@ -22,8 +21,10 @@ namespace snow
                 : m_ios{ios},
                   m_strand{ios},
                   m_start_time{std::chrono::steady_clock::now()} {
-            SNOW_LOG_TRACE << "session construct" << std::endl;
-            boost::asio::spawn(m_strand, [](boost::asio::yield_context yield) { SNOW_LOG_TRACE << "test" << std::endl; });
+            SNOW_LOG_TRACE("session construct");
+            boost::asio::spawn(m_strand, [](boost::asio::yield_context yield) {
+                SNOW_LOG_TRACE("test");
+            });
         }
 
         const std::chrono::steady_clock& get_start_time() const {
@@ -46,7 +47,7 @@ namespace snow
         }
 
         bool start(const request_t& req) {
-            SNOW_LOG_TRACE << "session start:" << req << std::endl;
+            SNOW_LOG_TRACE("session start: {}", req);
             auto self(this->shared_from_this());
             boost::asio::spawn(m_strand,
                                [this, self, req](boost::asio::yield_context yield){

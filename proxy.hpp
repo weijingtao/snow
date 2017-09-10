@@ -1,28 +1,25 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
+#include <memory>
 #include <string>
 #include <functional>
 #include <algorithm>
 #include <tuple>
 #include <exception>
 #include <boost/asio.hpp>
-#include "connection.hpp"
-#include "acceptor.hpp"
+#include "Connection.hpp"
+#include "Acceptor.hpp"
 #include "log/log.hpp"
-#include "buffer.hpp"
+#include "utils/buffer.hpp"
+#include "utils/type.hpp"
+#include "spdlog/fmt/bundled/ostream.h"
 
 namespace snow
 {
     class proxy {
     public:
         typedef std::tuple<std::string, std::string, uint16_t>                                      end_point_type;
-        typedef std::function<void(const buffer&)>                                                  response_dispatch_type;
-        typedef std::function<void(const char*, std::size_t, response_dispatch_type)>               request_dispatch_type;
-        typedef std::function<int(const char*, std::size_t)>                                pkg_split_type;
-        typedef std::unique_ptr<boost::asio::io_service::strand>                                    strand_ptr_t;
-        typedef std::vector<strand_ptr_t>                                                           strand_vec_t;
 
         proxy(boost::asio::io_service& ios)
              : m_ios(ios) {
@@ -32,33 +29,33 @@ namespace snow
         int init(std::vector<end_point_type>& end_points) {
             for(auto& end_point : end_points) {
                 if(std::string("tcp") == std::get<0>(end_point)) {
-                    m_acceptors.emplace_back(m_ios, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), std::get<2>(end_point)));
+                    boost::asio::ip::tcp::endpoint listen_endpoint(boost::asio::ip::tcp::v4(), std::get<2>(end_point));
+                    std::shared_ptr<Acceptor> acceptor = std::make_shared<Acceptor>(m_ios, listen_endpoint);
+                    acceptor->set_new_connecte_call_back(std::bind(&proxy::on_connect, this, std::placeholders::_1));
+                    acceptor->start();
                 } else if(std::string("udp") == std::get<0>(end_point)) {
 
                 }
             }
-            for(auto& acceptor : m_acceptors) {
-                acceptor.set_new_connecte_call_back(std::bind(&proxy::on_connect, this, std::placeholders::_1));
-            }
-            for(auto& acceptor : m_acceptors) {
-                boost::asio::spawn(acceptor.strand(), acceptor);
-            }
             return 0;
         }
 
-        void set_pkg_spliter(pkg_split_type pkg_spliter) {
+        void set_pkg_spliter(utils::pkg_split_t pkg_spliter) {
             m_pkg_spliter = pkg_spliter;
         }
 
-        void set_request_dispatcher(request_dispatch_type request_dispatcher) {
+        void set_request_dispatcher(utils::request_dispatch_t request_dispatcher) {
             m_request_dispatcher = request_dispatcher;
         }
 
 
     private:
         void on_connect(boost::asio::ip::tcp::socket& socket) {
-            SNOW_LOG_TRACE << "new connection" << std::endl;
-            std::make_shared<connection>(socket, m_request_dispatcher, m_pkg_spliter, 100)->start();
+            SNOW_LOG_TRACE("new Connection socket fd {}, local addr {}, peer addr {}",
+                           socket.native(),
+                           socket.local_endpoint(),
+                           socket.remote_endpoint());
+            std::make_shared<Connection>(socket, m_request_dispatcher, m_pkg_spliter, 100)->start();
         }
 
         /*void create_udp_recever(const std::string& ip, uint16_t port) {
@@ -89,8 +86,7 @@ namespace snow
 
     private:
         boost::asio::io_service&          m_ios;
-        std::vector<acceptor>             m_acceptors;
-        pkg_split_type                    m_pkg_spliter;
-        request_dispatch_type             m_request_dispatcher;
+        utils::pkg_split_t                m_pkg_spliter;
+        utils::request_dispatch_t         m_request_dispatcher;
     };
 }
