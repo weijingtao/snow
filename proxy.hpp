@@ -55,7 +55,7 @@ namespace snow
                            socket.native(),
                            socket.local_endpoint(),
                            socket.remote_endpoint());
-            std::make_shared<Connection>(socket, m_request_dispatcher, m_pkg_spliter, 100)->start();
+            std::make_shared<Connection>(socket, m_request_dispatcher, m_pkg_spliter, 100 * 1000)->start();
         }
 
         /*void create_udp_recever(const std::string& ip, uint16_t port) {

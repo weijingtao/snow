@@ -9,7 +9,7 @@ namespace snow {
     public:
         static std::shared_ptr<spdlog::logger> get() {
             static std::shared_ptr<spdlog::logger> logger
-                    = spdlog::basic_logger_mt("snow", "./server.txt", true);
+                    = spdlog::basic_logger_mt("snow", "./server1.txt", true);
             logger->set_level(spdlog::level::trace);
             return logger;
         }

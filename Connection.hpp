@@ -32,6 +32,10 @@ namespace snow {
         }
 
         ~Connection() {
+            if(m_socket.is_open()) {
+                m_socket.close();
+            }
+            m_timer.cancel();
             SNOW_LOG_TRACE("socket fd {}, status {}", m_socket.native(), m_status);
         }
 
@@ -63,7 +67,8 @@ namespace snow {
                               size);
                 return 0;
             }
-            bool need_start_write = m_send_buffer.writeable_bytes() == 0;
+            restart_timer();
+            bool need_start_write = m_send_buffer.readable_bytes() == 0;
             m_send_buffer.append(data, size);
             if(need_start_write) {
                 SNOW_LOG_TRACE("start async write, size {}", size);
@@ -80,6 +85,8 @@ namespace snow {
 
         void write_finish_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) {
             if(ec || !m_socket.is_open()) {
+                m_timer.cancel();
+                m_socket.cancel();
                 m_status = utils::Status::WriteError();
                 return;
             }
@@ -98,9 +105,12 @@ namespace snow {
 
         std::size_t completion_condition(const boost::system::error_code& ec, std::size_t bytes_transferred) {
             if(ec || !m_socket.is_open()) {
+                m_timer.cancel();
+                m_socket.cancel();
                 m_status = utils::Status::ReadError();
                 return 0;
             }
+            restart_timer();
             const int check_ret = m_pkg_spliter(m_recv_buffer.read_index(), bytes_transferred);
             SNOW_LOG_TRACE("check ret {}", check_ret);
             if(check_ret > 0) {
@@ -108,6 +118,8 @@ namespace snow {
             } else if(check_ret == 0) {
                 return m_recv_buffer.writeable_bytes();
             } else {
+                m_socket.close();
+                m_timer.cancel();
                 m_status = utils::Status::PkgCheckError();
                 return 0;
             }
@@ -116,22 +128,56 @@ namespace snow {
         void read_finish_handler(const boost::system::error_code& ec, std::size_t bytes_transferred) {
             if(ec || !m_socket.is_open()) {
                 m_status = utils::Status::ReadError();
+                if(m_socket.is_open()) {
+                    m_socket.close();
+                    //m_socket.cancel();
+                }
+
+                m_timer.cancel();
                 return;
             }
             m_recv_buffer.increase_write_index(bytes_transferred);
+
+            std::weak_ptr<Connection> conn(shared_from_this());
             m_request_dispatcher(m_recv_buffer.read_index(),
                                  m_recv_buffer.readable_bytes(),
-                                 std::bind(&Connection::send,
-                                           shared_from_this(),
-                                           std::placeholders::_1,
-                                           std::placeholders::_2));
+                                 [this, conn](const char* const data, std::size_t size) {
+                                     auto conn_ptr = conn.lock();
+                                     if(conn_ptr) {
+                                         send(data, size);
+                                     }
+                                 });
             m_recv_buffer.adjuest();
+            boost::asio::async_read(m_socket,
+                                    boost::asio::buffer(m_recv_buffer.write_index(), m_recv_buffer.writeable_bytes()),
+                                    std::bind(&Connection::completion_condition,
+                                              this->shared_from_this(),
+                                              std::placeholders::_1,
+                                              std::placeholders::_2),
+                                    std::bind(&Connection::read_finish_handler,
+                                              this->shared_from_this(),
+                                              std::placeholders::_1,
+                                              std::placeholders::_2));
         }
 
         void timeout_handler() {
-            m_socket.cancel();
-            m_socket.close();
-            m_status = utils::Status::Tiemout();
+            if(m_timer.expires_from_now() <= std::chrono::milliseconds(0)) {
+                if(m_socket.is_open()) {
+                    try {
+                        m_socket.cancel();
+                        m_socket.close();
+                    } catch (std::exception e) {
+                        SNOW_LOG_WARN("exception {}", e.what());
+                    }
+                }
+                m_status = utils::Status::Tiemout();
+            }
+        }
+
+        void restart_timer() {
+            m_timer.cancel();
+            m_timer.expires_from_now(m_time_out);
+            m_timer.async_wait(std::bind(&Connection::timeout_handler, this->shared_from_this()));
         }
 
     private:

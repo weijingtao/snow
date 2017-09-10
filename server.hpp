@@ -78,6 +78,7 @@ namespace snow {
             auto new_session = std::make_shared<session_t>(m_ios);
             new_session->set_response_dispatcher([this, rsp_dispatcher](boost::optional<response_t>&& rsp) {
                 std::string str_rsp = encode(*rsp);
+                SNOW_LOG_TRACE("rsp size {}", str_rsp.size());
                 rsp_dispatcher(str_rsp.data(), str_rsp.size());
             });
             new_session->start(decode(req_data, req_len));

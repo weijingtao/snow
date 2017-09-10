@@ -25,6 +25,10 @@ namespace snow {
 
             virtual ~Codec() = default;
 
+            Codec(const Codec&) = delete;
+
+            Codec& operator=(const Codec&) = delete;
+
             request_t& get_request() { return m_request; }
 
             const request_t& get_request() const { return m_request; }
