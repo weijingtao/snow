@@ -17,43 +17,44 @@
 
 
 namespace snow {
-    namespace client {
-        class Client {
-            template <typename Codec>
-            class DoRequest;
+namespace client {
+class Client {
+    template<typename Codec>
+    class DoRequest;
 
-        public:
-            Client(boost::asio::io_service& ios, boost::asio::yield_context& yield)
-                    : m_ios{ios}
-                    , m_yield{yield} {
-                SNOW_LOG_TRACE(__func__);
-            }
-
-            template <typename Codec>
-            void request(std::vector<std::unique_ptr<Codec>>& codecs,
-                         std::chrono::milliseconds timeout) {
-                detail::WaitGroup wait_group{m_ios, m_yield};
-                for(auto& codec : codecs)
-                    _request(m_ios, wait_group, *codec);
-                wait_group.wait(timeout);
-            }
-
-            void request(std::initializer_list<detail::CodecBase*> codecs,
-                         std::chrono::milliseconds timeout) {
-                detail::WaitGroup wait_group{m_ios, m_yield};
-                for(auto codec : codecs)
-                    _request(m_ios, wait_group, *codec);
-                wait_group.wait(timeout);
-            }
-
-        private:
-            void _request(boost::asio::io_service& ios, detail::WaitGroup& wait_group, detail::CodecBase& codec) {
-                std::make_shared<detail::DoRequest>(m_ios, wait_group, codec)->start();
-            }
-
-        private:
-            boost::asio::io_service&     m_ios;
-            boost::asio::yield_context&  m_yield;
-        };
+public:
+    Client(boost::asio::io_service &ios, boost::asio::yield_context &yield)
+            : m_ios{ios}, m_yield{yield} {
+        SNOW_LOG_TRACE(__func__);
     }
+
+    template<typename Codec>
+    void request(std::vector<std::unique_ptr<Codec>> &codecs,
+                 std::chrono::milliseconds timeout) {
+        detail::WaitGroup wait_group{m_ios, m_yield};
+        for (auto &codec : codecs) {
+            _request(m_ios, wait_group, *codec);
+        }
+        wait_group.wait(timeout);
+    }
+
+    void request(std::initializer_list<detail::CodecBase *> codecs,
+                 std::chrono::milliseconds timeout) {
+        detail::WaitGroup wait_group{m_ios, m_yield};
+        for (auto codec : codecs) {
+            _request(m_ios, wait_group, *codec);
+        }
+        wait_group.wait(timeout);
+    }
+
+private:
+    void _request(boost::asio::io_service &ios, detail::WaitGroup &wait_group, detail::CodecBase &codec) {
+        std::make_shared<detail::DoRequest>(m_ios, wait_group, codec)->start();
+    }
+
+private:
+    boost::asio::io_service &m_ios;
+    boost::asio::yield_context &m_yield;
+};
+}
 }

@@ -8,8 +8,8 @@
 #include "config.hpp"
 
 namespace snow {
-    using Client = client::Client;
+using Client = client::Client;
 
-    template <typename req, typename rsp>
-    using Codec = client::Codec<req, rsp>;
+template<typename req, typename rsp>
+using Codec = client::Codec<req, rsp>;
 }
