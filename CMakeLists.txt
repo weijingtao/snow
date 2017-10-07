@@ -25,3 +25,5 @@ target_link_libraries(test2
         boost_system
         yaml-cpp
         pthread)
+
+add_executable(utest_context utest/context_test.cpp)

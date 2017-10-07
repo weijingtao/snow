@@ -38,8 +38,8 @@ public:
     }
 
     template<typename T>
-    const T &get(const std::string &name) const {
-        return boost::any_cast<T &>(&m_values[name]);
+    const T &get(const std::string &name) {
+        return boost::any_cast<T &>(m_values[name]);
     }
 
     bool has(const std::string &name) {
